@@ -7,11 +7,25 @@ module Ym4r
         "new GSmallMapControl()"
       end
     end
+    #Small map control. Report to the Google Maps API documentation for details.
+    class GSmallMapControl3D
+      include MappingObject
+      def create
+        "new GSmallMapControl3D()"
+      end
+    end
     #Large Map control. Report to the Google Maps API documentation for details.
     class GLargeMapControl
       include MappingObject
       def create
         "new GLargeMapControl()"
+      end
+    end
+    #Large Map control. Report to the Google Maps API documentation for details.
+    class GLargeMapControl3D
+      include MappingObject
+      def create
+        "new GLargeMapControl3D()"
       end
     end
     #Small Zoom control. Report to the Google Maps API documentation for details.
@@ -35,13 +49,20 @@ module Ym4r
         "new GMapTypeControl()"
       end
     end
+    #Menu Map type control. Report to the Google Maps API documentation for details.
+    class GMenuMapTypeControl
+      include MappingObject
+      def create
+        "new GMenuMapTypeControl()"
+      end
+    end
      #Map type control. Report to the Google Maps API documentation for details.
     class GHierarchicalMapTypeControl
       include MappingObject
       def create
         "new GHierarchicalMapTypeControl()"
       end
-    end    
+    end
     #Overview map control. Report to the Google Maps API documentation for details.
     class GOverviewMapControl
       include MappingObject
@@ -52,18 +73,18 @@ module Ym4r
         "new GOverviewMapControl(#{@size ? @size.create : ''})"
       end
     end
-    
+
     # Local Search control. Report to the Google Maps API documentation for details.
     # The first argument of the constructor is one of the following: :top_right, :top_left, :bottom_right, :bottom_left.
     # The second and third arguments of the constructor are the offset width and height respectively in pixels.
-    # The fourth argument is a javascript hash of valid Google local search control options 
-    # (ex. {suppressZoomToBounds : true, resultList : google.maps.LocalSearch.RESULT_LIST_INLINE, 
-    # suppressInitialResultSelection : true, searchFormHint : 'Local Search powered by Google', 
+    # The fourth argument is a javascript hash of valid Google local search control options
+    # (ex. {suppressZoomToBounds : true, resultList : google.maps.LocalSearch.RESULT_LIST_INLINE,
+    # suppressInitialResultSelection : true, searchFormHint : 'Local Search powered by Google',
     # linkTarget : GSearch.LINK_TARGET_BLANK})
     class GLocalSearchControl < Struct.new(:anchor, :offset_width, :offset_height, :options)
       include MappingObject
       def create
-        if offset_width.nil? 
+        if offset_width.nil?
           ow = 10
         else
           ow = offset_width

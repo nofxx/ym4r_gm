@@ -1,15 +1,15 @@
 module Ym4r
-  module GmPlugin 
+  module GmPlugin
     #Representing the Google Maps API class GMap2.
     class GMap
       include MappingObject
-      
+
       #A constant containing the declaration of the VML namespace, necessary to display polylines under IE.
       VML_NAMESPACE = "xmlns:v=\"urn:schemas-microsoft-com:vml\""
-      
-      #The id of the DIV that will contain the map in the HTML page. 
+
+      #The id of the DIV that will contain the map in the HTML page.
       attr_reader :container
-      
+
       #By default the map in the HTML page will be globally accessible with the name +map+.
       def initialize(container, variable = "map")
         @container = container
@@ -41,7 +41,7 @@ module Ym4r
         a << "<style type=\"text/css\">@import url(\"http://www.google.com/uds/css/gsearch.css\");@import url(\"http://www.google.com/uds/solutions/localsearch/gmlocalsearch.css\");}</style>" if options[:local_search]
         a
       end
-     
+
       #Outputs the <div id=...></div> which has been configured to contain the map. You can pass <tt>:width</tt> and <tt>:height</tt> as options to output this in the style attribute of the DIV element (you could also achieve the same effect by putting the dimension info into a CSS or using the instance method GMap#header_width_height). You can aslo pass <tt>:class</tt> to set the classname of the div.
       # To include initial content in the div, such as a loading message, you
       # may pass a <tt>:content</tt> option specifying a string, or other
@@ -78,11 +78,14 @@ module Ym4r
       #Initializes the controls: you can pass a hash with keys <tt>:small_map</tt>, <tt>:large_map</tt>, <tt>:small_zoom</tt>, <tt>:scale</tt>, <tt>:map_type</tt>, <tt>:overview_map</tt> and hash of options controlling its display (<tt>:hide</tt> and <tt>:size</tt>), <tt>:local_search</tt>, <tt>:local_search_options</tt>, and <tt>:show_on_focus</tt>
       def control_init(controls = {})
         @init_end << add_control(GSmallMapControl.new) if controls[:small_map]
+        @init_end << add_control(GSmallMapControl3D.new) if controls[:small_map_3d]
         @init_end << add_control(GLargeMapControl.new) if controls[:large_map]
+        @init_end << add_control(GLargeMapControl3D.new) if controls[:large_map_3d]
         @init_end << add_control(GSmallZoomControl.new) if controls[:small_zoom]
         @init_end << add_control(GScaleControl.new) if controls[:scale]
         @init_end << add_control(GMapTypeControl.new) if controls[:map_type]
-        @init_end << add_control(GHierarchicalMapTypeControl.new) if controls[:hierarchical_map_type]        
+        @init_end << add_control(GMenuMapTypeControl.new) if controls[:menu_map_type]
+        @init_end << add_control(GHierarchicalMapTypeControl.new) if controls[:hierarchical_map_type]
         if controls[:overview_map]
           if controls[:overview_map].is_a?(Hash)
             hide = controls[:overview_map][:hide]
@@ -100,14 +103,14 @@ module Ym4r
           event_init(self, :mouseout,  "function(){#{@variable}.hideControls();}")
         end
       end
-      
+
       #Initializes the interface configuration: double-click zoom, dragging, continuous zoom,... You can pass a hash with keys <tt>:dragging</tt>, <tt>:info_window</tt>, <tt>:double_click_zoom</tt>, <tt>:continuous_zoom</tt> and <tt>:scroll_wheel_zoom</tt>. The values should be true or false. Check the google maps API doc to know what the default values are.
       def interface_init(interface = {})
         if !interface[:dragging].nil?
           if interface[:dragging]
-             @init << enableDragging() 
+             @init << enableDragging()
           else
-            @init << disableDragging() 
+            @init << disableDragging()
           end
         end
         if !interface[:info_window].nil?
@@ -202,12 +205,12 @@ module Ym4r
       def record_global_init(code)
         @global_init << code
       end
-      
+
       #Deprecated. Use icon_global_init instead.
       def icon_init(icon , name)
         icon_global_init(icon , name)
       end
-      
+
       #Initializes an icon  and makes it globally accessible through the JavaScript variable of name +variable+.
       def icon_global_init(icon , name, options = {})
         declare_global_init(icon,name,options)
@@ -222,7 +225,7 @@ module Ym4r
       def event_global_init(object,event,callback)
         @global_init << "GEvent.addListener(#{object.to_javascript},\"#{MappingObject.javascriptify_method(event.to_s)}\",#{callback});"
       end
-      
+
       #Declares the overlay globally with name +name+
       def overlay_global_init(overlay,name, options = {})
         declare_global_init(overlay,name, options)
@@ -238,7 +241,7 @@ module Ym4r
           @init << variable.assign_to(name)
         end
       end
-      
+
       #Outputs the initialization code for the map. By default, it outputs the script tags, performs the initialization in response to the onload event of the window and makes the map globally available. If you pass +true+ to the option key <tt>:full</tt>, the map will be setup in full screen, in which case it is not necessary (but not harmful) to set a size for the map div.
       def to_html(options = {})
         no_load = options[:no_load]
@@ -247,7 +250,7 @@ module Ym4r
         no_global = options[:no_global]
         fullscreen = options[:full]
         load_pr = options[:proto_load] #to prevent some problems when the onload event callback from Prototype is used
-        
+
         html = ""
         html << "<script type=\"text/javascript\">\n" if !no_script_tag
         #put the functions in a separate javascript file to be included in the page
@@ -262,16 +265,16 @@ module Ym4r
           html << "function() {\n"
         end
 
-        html << "if (GBrowserIsCompatible()) {\n" 
-        
+        html << "if (GBrowserIsCompatible()) {\n"
+
         if fullscreen
           #Adding the initial resizing and setting up the event handler for
           #future resizes
           html << "setWindowDims(document.getElementById('#{@container}'));\n"
           html << "if (window.attachEvent) { window.attachEvent(\"onresize\", function() {setWindowDims(document.getElementById('#{@container}'));})} else {window.addEventListener(\"resize\", function() {setWindowDims(document.getElementById('#{@container}')); } , false);}\n"
         end
-      
-        if !no_declare and no_global 
+
+        if !no_declare and no_global
           html << "#{declare(@variable)}\n"
         else
           html << "#{assign_to(@variable)}\n"
@@ -282,16 +285,16 @@ module Ym4r
         html << "\n}\n"
         html << "});\n" if !no_load
         html << "</script>" if !no_script_tag
-        
+
         if fullscreen
           #setting up the style in case of full screen
           html << "<style>html, body {width: 100%; height: 100%} body {margin-top: 0px; margin-right: 0px; margin-left: 0px; margin-bottom: 0px} ##{@container} {margin:  0px;} </style>"
         end
-        
+
         html
       end
-      
-      #Outputs in JavaScript the creation of a GMap2 object 
+
+      #Outputs in JavaScript the creation of a GMap2 object
       def create
         "new GMap2(document.getElementById(\"#{@container}\"))"
       end
